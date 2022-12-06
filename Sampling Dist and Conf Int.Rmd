@@ -1,0 +1,111 @@
+---
+title: "Distribución muestral de la media: varianza desconocida "
+header-includes: \usepackage{setspace}\doublespacing
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Distribución muestral de la media $\bar{X}$, cuando $\sigma^2$ es desconocida.
+
+```{r}
+n<-20
+vmu<-15
+vsigma<-1.2
+StatMean<-numeric(1000)
+for (i in 1:1000){muestra<-
+  rnorm(n,vmu,vsigma); 
+  StatMean[i]<-(mean(muestra)-vmu)/(sd(muestra)/sqrt(n))}
+EjeX2<-seq(min(StatMean),max(StatMean),0.01)
+hist(StatMean,ylab = "Densidad", freq = FALSE, ylim = c(0,0.4),
+     main = expression(paste("Distribución muestral de" (bar(x)-mu)/(s/sqrt(n)))))
+lines(EjeX2,dt(EjeX2,n-1),col="red")
+```
+
+¿Qué podemos concluir de las simulaciones anteriores?
+
+Al parecer, el estadístico $\frac{(\bar{X}-\mu)}{s / \sqrt{n}}$ se distribuye como una \textit{t-Student} con $n-1$ grados de libertad.
+
+Esto se justifica con lo siguiente:
+
+Si $Z \sim N(0,1)$ y $U\sim\chi^2_{r}$ son independientes, entonces la variable aleatoria $T=\frac{Z}{\sqrt{U/r}}$ se distribuye como una \textit{t-Student} con $r$ grados de libertad.
+
+De esta manera, considerando una muestra aleatoria $X_{1},X_{2}\ldots,X_{n}$ de tamaño $n$, tomada de una población normal con media $\mu$ y varianza $\sigma^2$, y donde $\bar{X}=\frac{1}{n}\sum_{i=1}^{n}X_{i}$ y $S^2=\frac{1}{n-1}\sum_{i=1}^{n}(X_{i}-\bar{X})^2$ son la media y varianza muestrales, respectivamente, podemos considerar que:
+
+$\frac{(\bar{X}-\mu)}{\sigma / \sqrt{n}}\sim N(0,1)$ y $\frac{(n-1)S^2}{\sigma^2}\sim \chi^2_{n-1}$, entonces
+
+$$
+\frac{\frac{(\bar{X}-\mu)}{\sigma / \sqrt{n}}}{\sqrt{\frac{\frac{(n-1)S^2}{\sigma^2}}{n-1}}} = \frac{(\bar{X}-\mu)}{s / \sqrt{n}} \sim t_{n-1}
+$$
+
+Ejercicios de práctica
+
+**Problema 1.** Un nuevo método para medir niveles de fósforo en el suelo se describe en el artículo "A Rapid Method to Determine Total Phosphorus in Soil" (Sois Sci. Amer. J., 1988, pp. 1301-1304). Suponga que se analiza una muestra de 11 especímenes de suelo, cada uno con un verdadero contenido de fósforo de 548 mg/kg, para lo cual se utiliza el nuevo método. La media y desviación estándar resultantes, para el nivel de fósforo son 587 y 10, respectivamente. ¿Considera Usted que existe evidencia de que el nivel medio de fósforo reportado por el nuevo método difiere significativamente del verdadero valor?
+
+**Problema 2.** En una investigación concerniente a la toxina producida por cierta serpiente venenosa, un investigador preparó 26 frascos diferentes, cada uno con 1 gramo de esta toxina, y luego determinó la cantidad de antitoxina necesaria para neutralizarla. En este experimento el investigador encontró que la cantidad promedio de antitoxina necesaria era de 1.89 mg. con una desviación estándar de 0.42 mg. De investigaciones previas se sabe que el verdadero promedio de cantidad neutralizante de antitoxina es de 1.75 mg por cada gramo de toxina. ¿Contradice la nueva información el valor establecido con anterioridad?
+
+## Intervalos de confianza
+
+A continuación se construyen $25$ intervalos del $95\%$ de confianza para la media $\mu,$ en una población cuya variable en estudio se distribuye normalmente con varianza $\sigma^2$ desconocida.
+
+```{r}
+mu<-50
+sigma<-3
+n<-20 
+m<-25 
+pvalor<-rep(NA,m)
+resultado1<-rep(NA,m)
+resultado2<-rep(NA,m)
+medias<-rep(NA,m)
+for(i in 1:m)
+{
+  x<-rnorm(n,mu,sigma)
+  medias[i]<-mean(x)
+  pvalor[i]<-t.test(x,alternative="two.sided",mu=50)$p.value
+  resultado1[i]<-t.test(x,alternative="two.sided",mu=50)$conf.int[1]
+  resultado2[i]<-t.test(x,alternative="two.sided",mu=50)$conf.int[2]
+}
+Resumen<-data.frame(medias, pvalor)
+Resumen
+
+```
+
+```{r}
+require(plotrix)
+plotCI(pvalor, medias, ui=resultado2, li=resultado1,ylab="Intervalos al 95% de Confianza")
+abline(h=mu,col="blue")
+resultgral<-cbind(pvalor,resultado1,resultado2)
+resultgral
+
+cont=0
+for (i in 1:m) 
+  { if (mu > resultado1[i] && mu < resultado2[i] )
+  cont=cont+1
+}
+cont
+cont/25
+```
+
+¿Qué hemos aprendido de lo anterior?
+
+Veamos la definición de intervalo de confianza que The Cambridge Dictionary of Statistics, Everitt, B.S. (1998) proporciona:
+
+**Confidence interval.** A range of values, calculated from the sample observations, that are believed, with a particular probability, to contain the true parameter value. A $95\%$ confidence interval, for example, implies that were the estimation process repeated again and again, then $95\%$ of the calculated intervals would be expected to contain the true parameter value. Note that the stated probability level refers to properties of the interval an not to the parameter itself, which is not considered a random variable.
+
+## Intervalo de confianza para la media $\mu$ (Población normal, $\sigma^2$ desconocida)
+
+Para construir un intervalo de confianza es muy común partir de lo que se conoce como una variable pivotal o una cantidad pivotal.
+
+Por ejemplo, de acuerdo a The Cambridge Dictionary of Statistics:
+
+**Pivotal variable:** A function of one or more statistics and one or more parameters that has the same probability distribution for all values of the parameters. For example, the statistic $z$, dado por
+
+$$
+z=\frac{\bar{x}-\mu}{\sigma/\sqrt{n}},
+$$
+
+tiene una distribución normal estándar, para cualesquier valor de $\mu$ y $\sigma$.
+
+**Tarea: ¿Cómo utilizamos una cantidad pivotal para construir un intervalo de confianza?**
